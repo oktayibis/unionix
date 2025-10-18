@@ -73,6 +73,7 @@ Explore additional real-world scenarios in the `example/` directory:
 - `example/dom-handler.ts` drives UI commands from DOM-style events
 - `example/pokemon.ts` manages a typed Pokemon roster
 - `example/order-handler.ts` walks through order fulfillment states
+- `example/layout-model.ts` assembles nested UI components from JSON content
 
 Run any example with `npx ts-node <path-to-example>`.
 
