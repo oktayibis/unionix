@@ -3,7 +3,7 @@
  * Run with: npx ts-node example.ts
  */
 
-import { create } from './src/index';
+import { create } from './src';
 
 // Define discriminated union types
 interface AUnion {
@@ -157,3 +157,9 @@ const isComplete = stateHelpers.match(state, {
   error: () => true
 });
 console.log('Is complete?', isComplete);
+
+const updatedState = stateHelpers.transform(state, {
+    loading: () => ({type: 'success', data: 'Updated'})
+})
+
+console.log('Updated state:', updatedState);

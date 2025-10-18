@@ -114,6 +114,23 @@ const result = helpers.map(bValue, {
 });
 ```
 
+### `transform(value, handlers)`
+
+Transforms a union value, allowing variants to be converted into other variants in the same union. Unhandled variants are returned unchanged.
+
+**Parameters:**
+- `value`: The union value to transform
+- `handlers`: Partial object with transformation functions that can return any union variant
+
+**Returns:** The transformed union value
+
+```typescript
+const result = helpers.transform(value, {
+  AType: (a) => ({ type: 'BType', data: a.data.length }),
+  BType: (b) => ({ type: 'AType', data: b.data.toString() })
+});
+```
+
 ### `when(value, handlers)`
 
 Exhaustive pattern matching with a consistent return type. All variants must be handled.

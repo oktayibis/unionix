@@ -92,6 +92,39 @@ describe("ts-unios", () => {
     });
   });
 
+  describe("transform", () => {
+    test("should convert variant to different type", () => {
+      const result = helpers.transform(aValue, {
+        aType: (a) => ({ type: "bType", data: a.data.length }),
+      });
+
+      expect(result).toEqual({ type: "bType", data: 5 });
+    });
+
+    test("should leave unhandled variants unchanged", () => {
+      const result = helpers.transform(bValue, {
+        aType: (a) => ({ type: "cType", flag: a.data.length > 0 }),
+      });
+
+      expect(result).toEqual(bValue);
+    });
+
+    test("should handle multiple transformation handlers", () => {
+      const resultA = helpers.transform(aValue, {
+        aType: (a) => ({ type: "bType", data: a.data.length }),
+        bType: (b) => ({ type: "cType", flag: b.data > 40 }),
+      });
+
+      const resultB = helpers.transform(bValue, {
+        aType: (a) => ({ type: "bType", data: a.data.length }),
+        bType: (b) => ({ type: "cType", flag: b.data > 40 }),
+      });
+
+      expect(resultA).toEqual({ type: "bType", data: 5 });
+      expect(resultB).toEqual({ type: "cType", flag: true });
+    });
+  });
+
   describe("when", () => {
     test("should execute correct handler and return result", () => {
       const result = helpers.when(aValue, {

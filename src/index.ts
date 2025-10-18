@@ -38,6 +38,13 @@ export type MapHandlers<Union extends DiscriminatedUnion> = {
 };
 
 /**
+ * Transform handlers - partial handlers that can transform a variant into any variant of the union
+ */
+export type TransformHandlers<Union extends DiscriminatedUnion> = {
+  [K in ExtractDiscriminator<Union>]?: (value: ExtractVariant<Union, K>) => Union;
+};
+
+/**
  * When handlers - exhaustive pattern matching with consistent return type
  */
 export type WhenHandlers<Union extends DiscriminatedUnion, R> = {
@@ -63,6 +70,134 @@ export type FoldHandlers<Union extends DiscriminatedUnion, R> = {
  */
 export type FilterPredicate<T> = (value: T) => boolean;
 
+const createMapFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["map"] => {
+  return (value, handlers) => {
+    const key = value.type as ExtractDiscriminator<Union>;
+    const handler = handlers[key];
+    if (handler) {
+      return handler(value as ExtractVariant<Union, typeof key>) as Union;
+    }
+    return value;
+  };
+};
+
+const createTransformFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["transform"] => {
+  return (value, handlers) => {
+    const key = value.type as ExtractDiscriminator<Union>;
+    const handler = handlers[key];
+    if (handler) {
+      return handler(value as ExtractVariant<Union, typeof key>);
+    }
+    return value;
+  };
+};
+
+const createWhenFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["when"] => {
+  return (value, handlers) => {
+    const key = value.type as ExtractDiscriminator<Union>;
+    const handler = handlers[key];
+    if (!handler) {
+      throw new Error(`No handler found for type: ${value.type}`);
+    }
+    return handler(value as ExtractVariant<Union, typeof key>);
+  };
+};
+
+const createMatchFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["match"] => {
+  return (value, handlers) => {
+    const key = value.type as ExtractDiscriminator<Union>;
+    const handler = handlers[key];
+    if (!handler) {
+      throw new Error(`No handler found for type: ${value.type}`);
+    }
+    return handler(value as ExtractVariant<Union, typeof key>);
+  };
+};
+
+const createFilterFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["filter"] => {
+  return <K extends ExtractDiscriminator<Union>>(
+    values: readonly Union[],
+    types: K | readonly K[]
+  ): Array<ExtractVariant<Union, K>> => {
+    const allowedTypes = new Set(Array.isArray(types) ? types : [types]);
+    return values.filter((value): value is ExtractVariant<Union, K> => allowedTypes.has(value.type as K)) as Array<
+      ExtractVariant<Union, K>
+    >;
+  };
+};
+
+const createFilterByFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["filterBy"] => {
+  return <K extends ExtractDiscriminator<Union>>(
+    values: readonly Union[],
+    predicates: {
+      [P in K]: FilterPredicate<ExtractVariant<Union, P>>;
+    }
+  ): Array<ExtractVariant<Union, K>> => {
+    const allowedTypes = new Set(Object.keys(predicates));
+    return values.filter((value): value is ExtractVariant<Union, K> => {
+      if (allowedTypes.has(value.type)) {
+        const predicate = predicates[value.type as K];
+        return predicate ? predicate(value as ExtractVariant<Union, K>) : false;
+      }
+      return false;
+    }) as Array<ExtractVariant<Union, K>>;
+  };
+};
+
+const createFoldFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["fold"] => {
+  return (value, handlers, defaultHandler) => {
+    const key = value.type as ExtractDiscriminator<Union>;
+    const handler = handlers[key];
+    if (handler) {
+      return handler(value as ExtractVariant<Union, typeof key>);
+    }
+    return defaultHandler(value);
+  };
+};
+
+const createPartitionFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["partition"] => {
+  return (values) => {
+    const result = {} as {
+      [K in ExtractDiscriminator<Union>]: Array<ExtractVariant<Union, K>>;
+    };
+
+    for (const value of values) {
+      const key = value.type as ExtractDiscriminator<Union>;
+      if (!result[key]) {
+        result[key] = [];
+      }
+      result[key].push(value as ExtractVariant<Union, typeof key>);
+    }
+
+    return result;
+  };
+};
+
+const createGetTypeFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["getType"] => {
+  return (value) => value.type as ExtractDiscriminator<Union>;
+};
+
+const createConstructorFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["constructor"] => {
+  return <K extends ExtractDiscriminator<Union>>(type: K) => {
+    return <T extends ExtractVariant<Union, K>>(data: Omit<T, "type">): T => ({ ...data, type }) as T;
+  };
+};
+
+const createHelpersCore = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union> => ({
+  map: createMapFunction<Union>(),
+  transform: createTransformFunction<Union>(),
+  when: createWhenFunction<Union>(),
+  match: createMatchFunction<Union>(),
+  filter: createFilterFunction<Union>(),
+  filterBy: createFilterByFunction<Union>(),
+  fold: createFoldFunction<Union>(),
+  partition: createPartitionFunction<Union>(),
+  getType: createGetTypeFunction<Union>(),
+  constructor: createConstructorFunction<Union>(),
+});
+
+const uncapitalize = (str: string): string => str.charAt(0).toLowerCase() + str.slice(1);
+
 /**
  * UnionHelpers core methods (without type guards)
  */
@@ -81,6 +216,21 @@ export interface UnionHelpersCore<Union extends DiscriminatedUnion> {
    * });
    */
   map(value: Union, handlers: MapHandlers<Union>): Union;
+
+  /**
+   * Transform a union value, allowing variants to be converted to other variants.
+   * Unhandled variants are returned unchanged.
+   *
+   * @param value - The union value to transform
+   * @param handlers - Partial handlers that can return any variant of the union
+   * @returns The transformed union value
+   *
+   * @example
+   * const result = helpers.transform(value, {
+   *   AType: (a) => ({ type: 'BType', data: a.data.length })
+   * });
+   */
+  transform(value: Union, handlers: TransformHandlers<Union>): Union;
 
   /**
    * Exhaustive pattern matching with a consistent return type.
@@ -231,138 +381,29 @@ export type UnionHelpers<Union extends DiscriminatedUnion> = UnionHelpersCore<Un
  * }
  */
 export function create<Union extends DiscriminatedUnion>(): UnionHelpers<Union> {
-  const helpers: any = {};
-  const typeGuardCache = new Map<string, Function>();
+  const core = createHelpersCore<Union>();
+  const typeGuardCache = new Map<string, (value: Union) => boolean>();
 
-  // Helper to uncapitalize first letter
-  const uncapitalize = (str: string): string => {
-    return str.charAt(0).toLowerCase() + str.slice(1);
-  };
-
-  // Implement map
-  helpers.map = (value: Union, handlers: MapHandlers<Union>): Union => {
-    const handler = handlers[value.type as ExtractDiscriminator<Union>];
-    if (handler) {
-      return handler(value as any) as Union;
-    }
-    return value;
-  };
-
-  // Implement when (exhaustive pattern matching)
-  helpers.when = <R>(value: Union, handlers: WhenHandlers<Union, R>): R => {
-    const handler = handlers[value.type as ExtractDiscriminator<Union>];
-    if (!handler) {
-      throw new Error(`No handler found for type: ${value.type}`);
-    }
-    return handler(value as any);
-  };
-
-  // Implement match (alias for when, but emphasizes transformation)
-  helpers.match = <R>(value: Union, handlers: MatchHandlers<Union, R>): R => {
-    const handler = handlers[value.type as ExtractDiscriminator<Union>];
-    if (!handler) {
-      throw new Error(`No handler found for type: ${value.type}`);
-    }
-    return handler(value as any);
-  };
-
-  // Implement filter (simple type-based filtering)
-  helpers.filter = <K extends ExtractDiscriminator<Union>>(
-    values: readonly Union[],
-    types: K | readonly K[]
-  ): Array<ExtractVariant<Union, K>> => {
-    const allowedTypes = new Set(Array.isArray(types) ? types : [types]);
-    return values.filter((value) => allowedTypes.has(value.type as K)) as Array<ExtractVariant<Union, K>>;
-  };
-
-  // Implement filterBy (predicate-based filtering)
-  helpers.filterBy = <K extends ExtractDiscriminator<Union>>(
-    values: readonly Union[],
-    predicates: {
-      [P in K]: FilterPredicate<ExtractVariant<Union, P>>;
-    }
-  ): Array<ExtractVariant<Union, K>> => {
-    const allowedTypes = new Set(Object.keys(predicates));
-    return values.filter((value) => {
-      if (allowedTypes.has(value.type)) {
-        const predicate = predicates[value.type as K];
-        return predicate ? predicate(value as any) : false;
-      }
-      return false;
-    }) as Array<ExtractVariant<Union, K>>;
-  };
-
-  // Implement fold
-  helpers.fold = <R>(
-    value: Union,
-    handlers: FoldHandlers<Union, R>,
-    defaultHandler: (value: Union) => R
-  ): R => {
-    const handler = handlers[value.type as ExtractDiscriminator<Union>];
-    if (handler) {
-      return handler(value as any);
-    }
-    return defaultHandler(value);
-  };
-
-  // Implement partition
-  helpers.partition = (
-    values: readonly Union[]
-  ): {
-    [K in ExtractDiscriminator<Union>]: Array<ExtractVariant<Union, K>>;
-  } => {
-    const result = {} as {
-      [K in ExtractDiscriminator<Union>]: Array<ExtractVariant<Union, K>>;
-    };
-
-    for (const value of values) {
-      const type = value.type as ExtractDiscriminator<Union>;
-      if (!result[type]) {
-        result[type] = [];
-      }
-      result[type].push(value as any);
-    }
-
-    return result;
-  };
-
-  // Implement getType
-  helpers.getType = (value: Union): ExtractDiscriminator<Union> => {
-    return value.type as ExtractDiscriminator<Union>;
-  };
-
-  // Implement constructor
-  helpers.constructor = <K extends ExtractDiscriminator<Union>>(type: K) => {
-    return <T extends ExtractVariant<Union, K>>(data: Omit<T, 'type'>): T => {
-      return { ...data, type } as T;
-    };
-  };
-
-  // Use Proxy to dynamically create type guards (is{Type} methods)
-  return new Proxy(helpers, {
-    get(target, prop: string | symbol) {
-      if (typeof prop === 'string' && prop.startsWith('is')) {
-        // Check cache first
-        if (typeGuardCache.has(prop)) {
-          return typeGuardCache.get(prop);
+  return new Proxy(core as UnionHelpers<Union>, {
+    get(target, prop: string | symbol, receiver) {
+      if (typeof prop === "string" && prop.startsWith("is")) {
+        const cached = typeGuardCache.get(prop);
+        if (cached) {
+          return cached;
         }
 
-        // Extract the type from the method name (e.g., 'isAType' -> 'AType')
-        const typeName = prop.slice(2); // Remove 'is' prefix
-
-        // Create type guard function
+        const typeName = prop.slice(2);
         const typeGuard = (value: Union): boolean => {
           return value.type === uncapitalize(typeName) || value.type === typeName;
         };
 
-        // Cache it
         typeGuardCache.set(prop, typeGuard);
         return typeGuard;
       }
 
-      return target[prop];
+      return Reflect.get(target, prop, receiver);
     }
-  }) as UnionHelpers<Union>;
+  });
 }
 
 /**
