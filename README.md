@@ -65,6 +65,17 @@ const result = myUnions.when(exampleA, {
 });
 ```
 
+## Example Gallery
+
+Explore additional real-world scenarios in the `example/` directory:
+
+- `example/fetch-status.ts` shows handling async fetch lifecycles
+- `example/dom-handler.ts` drives UI commands from DOM-style events
+- `example/pokemon.ts` manages a typed Pokemon roster
+- `example/order-handler.ts` walks through order fulfillment states
+
+Run any example with `npx ts-node <path-to-example>`.
+
 ## API Reference
 
 ### `create<Union>()`
