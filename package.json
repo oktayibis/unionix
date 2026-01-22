@@ -1,6 +1,6 @@
 {
   "name": "unionix",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A type-safe TypeScript library for working with discriminated unions",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
