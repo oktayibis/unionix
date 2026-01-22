@@ -1,6 +1,6 @@
-# ts-unios
+# unionix
 
-A type-safe TypeScript library for working with discriminated unions. `ts-unios` provides powerful pattern matching, type guards, and transformation utilities that make working with discriminated unions elegant and safe.
+A type-safe TypeScript library for working with discriminated unions. `unionix` provides powerful pattern matching, type guards, and transformation utilities that make working with discriminated unions elegant and safe.
 
 ## Features
 
@@ -13,21 +13,21 @@ A type-safe TypeScript library for working with discriminated unions. `ts-unios`
 ## Installation
 
 ```bash
-npm install ts-unios
+npm install unionix
 ```
 
 ```bash
-yarn add ts-unios
+yarn add unionix
 ```
 
 ```bash
-pnpm add ts-unios
+pnpm add unionix
 ```
 
 ## Quick Start
 
 ```typescript
-import { create } from 'ts-unios';
+import { create } from 'unionix';
 
 // Define your discriminated union types
 interface AUnion {
@@ -308,7 +308,7 @@ const bValue = createB({ data: 42 });
 ### State Management
 
 ```typescript
-import { create } from 'ts-unios';
+import { create } from 'unionix';
 
 interface LoadingState {
   readonly type: 'loading';

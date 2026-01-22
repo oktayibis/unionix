@@ -1,6 +1,6 @@
-# Contributing to ts-unios
+# Contributing to unionix
 
-Thank you for your interest in contributing to ts-unios!
+Thank you for your interest in contributing to unionix!
 
 ## Development Setup
 
@@ -23,7 +23,7 @@ Thank you for your interest in contributing to ts-unios!
 ## Project Structure
 
 ```
-ts-unios/
+unionix/
 ├── src/
 │   ├── index.ts          # Main library implementation
 │   └── index.test.ts     # Comprehensive test suite

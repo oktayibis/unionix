@@ -18,7 +18,7 @@ interface CType {
 
 type TestUnion = AType | BType | CType;
 
-describe("ts-unios", () => {
+describe("unionix", () => {
   let helpers: ReturnType<typeof create<TestUnion>>;
 
   beforeEach(() => {

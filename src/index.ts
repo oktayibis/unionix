@@ -1,5 +1,5 @@
 /**
- * ts-unios - A type-safe TypeScript library for working with discriminated unions
+ * unionix - A type-safe TypeScript library for working with discriminated unions
  */
 
 /**
@@ -12,13 +12,19 @@ export type DiscriminatedUnion = {
 /**
  * Extract the discriminator type(s) from a union
  */
-export type ExtractDiscriminator<T extends DiscriminatedUnion> = T extends { readonly type: infer U } ? U : never;
+export type ExtractDiscriminator<T extends DiscriminatedUnion> = T extends {
+  readonly type: infer U;
+}
+  ? U
+  : never;
 
 /**
  * Extract a specific variant from a union by its discriminator value
  */
-export type ExtractVariant<Union extends DiscriminatedUnion, Type extends ExtractDiscriminator<Union>> =
-  Union extends { readonly type: Type } ? Union : never;
+export type ExtractVariant<
+  Union extends DiscriminatedUnion,
+  Type extends ExtractDiscriminator<Union>,
+> = Union extends { readonly type: Type } ? Union : never;
 
 /**
  * Type guard functions for each variant
@@ -26,7 +32,7 @@ export type ExtractVariant<Union extends DiscriminatedUnion, Type extends Extrac
  */
 export type TypeGuards<Union extends DiscriminatedUnion> = {
   [K in ExtractDiscriminator<Union> as `is${Capitalize<string & K>}`]: (
-    value: Union
+    value: Union,
   ) => value is ExtractVariant<Union, K>;
 };
 
@@ -34,14 +40,18 @@ export type TypeGuards<Union extends DiscriminatedUnion> = {
  * Map handlers - partial handlers that transform variants and return the same union type
  */
 export type MapHandlers<Union extends DiscriminatedUnion> = {
-  [K in ExtractDiscriminator<Union>]?: (value: ExtractVariant<Union, K>) => ExtractVariant<Union, K>;
+  [K in ExtractDiscriminator<Union>]?: (
+    value: ExtractVariant<Union, K>,
+  ) => ExtractVariant<Union, K>;
 };
 
 /**
  * Transform handlers - partial handlers that can transform a variant into any variant of the union
  */
 export type TransformHandlers<Union extends DiscriminatedUnion> = {
-  [K in ExtractDiscriminator<Union>]?: (value: ExtractVariant<Union, K>) => Union;
+  [K in ExtractDiscriminator<Union>]?: (
+    value: ExtractVariant<Union, K>,
+  ) => Union;
 };
 
 /**
@@ -70,7 +80,9 @@ export type FoldHandlers<Union extends DiscriminatedUnion, R> = {
  */
 export type FilterPredicate<T> = (value: T) => boolean;
 
-const createMapFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["map"] => {
+const createMapFunction = <
+  Union extends DiscriminatedUnion,
+>(): UnionHelpersCore<Union>["map"] => {
   return (value, handlers) => {
     const key = value.type as ExtractDiscriminator<Union>;
     const handler = handlers[key];
@@ -81,7 +93,9 @@ const createMapFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore
   };
 };
 
-const createTransformFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["transform"] => {
+const createTransformFunction = <
+  Union extends DiscriminatedUnion,
+>(): UnionHelpersCore<Union>["transform"] => {
   return (value, handlers) => {
     const key = value.type as ExtractDiscriminator<Union>;
     const handler = handlers[key];
@@ -92,7 +106,9 @@ const createTransformFunction = <Union extends DiscriminatedUnion>(): UnionHelpe
   };
 };
 
-const createWhenFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["when"] => {
+const createWhenFunction = <
+  Union extends DiscriminatedUnion,
+>(): UnionHelpersCore<Union>["when"] => {
   return (value, handlers) => {
     const key = value.type as ExtractDiscriminator<Union>;
     const handler = handlers[key];
@@ -103,7 +119,9 @@ const createWhenFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCor
   };
 };
 
-const createMatchFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["match"] => {
+const createMatchFunction = <
+  Union extends DiscriminatedUnion,
+>(): UnionHelpersCore<Union>["match"] => {
   return (value, handlers) => {
     const key = value.type as ExtractDiscriminator<Union>;
     const handler = handlers[key];
@@ -114,24 +132,28 @@ const createMatchFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCo
   };
 };
 
-const createFilterFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["filter"] => {
+const createFilterFunction = <
+  Union extends DiscriminatedUnion,
+>(): UnionHelpersCore<Union>["filter"] => {
   return <K extends ExtractDiscriminator<Union>>(
     values: readonly Union[],
-    types: K | readonly K[]
+    types: K | readonly K[],
   ): Array<ExtractVariant<Union, K>> => {
     const allowedTypes = new Set(Array.isArray(types) ? types : [types]);
-    return values.filter((value): value is ExtractVariant<Union, K> => allowedTypes.has(value.type as K)) as Array<
-      ExtractVariant<Union, K>
-    >;
+    return values.filter((value): value is ExtractVariant<Union, K> =>
+      allowedTypes.has(value.type as K),
+    ) as Array<ExtractVariant<Union, K>>;
   };
 };
 
-const createFilterByFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["filterBy"] => {
+const createFilterByFunction = <
+  Union extends DiscriminatedUnion,
+>(): UnionHelpersCore<Union>["filterBy"] => {
   return <K extends ExtractDiscriminator<Union>>(
     values: readonly Union[],
     predicates: {
       [P in K]: FilterPredicate<ExtractVariant<Union, P>>;
-    }
+    },
   ): Array<ExtractVariant<Union, K>> => {
     const allowedTypes = new Set(Object.keys(predicates));
     return values.filter((value): value is ExtractVariant<Union, K> => {
@@ -144,7 +166,9 @@ const createFilterByFunction = <Union extends DiscriminatedUnion>(): UnionHelper
   };
 };
 
-const createFoldFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["fold"] => {
+const createFoldFunction = <
+  Union extends DiscriminatedUnion,
+>(): UnionHelpersCore<Union>["fold"] => {
   return (value, handlers, defaultHandler) => {
     const key = value.type as ExtractDiscriminator<Union>;
     const handler = handlers[key];
@@ -155,7 +179,9 @@ const createFoldFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCor
   };
 };
 
-const createPartitionFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["partition"] => {
+const createPartitionFunction = <
+  Union extends DiscriminatedUnion,
+>(): UnionHelpersCore<Union>["partition"] => {
   return (values) => {
     const result = {} as {
       [K in ExtractDiscriminator<Union>]: Array<ExtractVariant<Union, K>>;
@@ -173,17 +199,24 @@ const createPartitionFunction = <Union extends DiscriminatedUnion>(): UnionHelpe
   };
 };
 
-const createGetTypeFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["getType"] => {
+const createGetTypeFunction = <
+  Union extends DiscriminatedUnion,
+>(): UnionHelpersCore<Union>["getType"] => {
   return (value) => value.type as ExtractDiscriminator<Union>;
 };
 
-const createConstructorFunction = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union>["constructor"] => {
+const createConstructorFunction = <
+  Union extends DiscriminatedUnion,
+>(): UnionHelpersCore<Union>["constructor"] => {
   return <K extends ExtractDiscriminator<Union>>(type: K) => {
-    return <T extends ExtractVariant<Union, K>>(data: Omit<T, "type">): T => ({ ...data, type }) as T;
+    return <T extends ExtractVariant<Union, K>>(data: Omit<T, "type">): T =>
+      ({ ...data, type }) as T;
   };
 };
 
-const createHelpersCore = <Union extends DiscriminatedUnion>(): UnionHelpersCore<Union> => ({
+const createHelpersCore = <
+  Union extends DiscriminatedUnion,
+>(): UnionHelpersCore<Union> => ({
   map: createMapFunction<Union>(),
   transform: createTransformFunction<Union>(),
   when: createWhenFunction<Union>(),
@@ -196,7 +229,8 @@ const createHelpersCore = <Union extends DiscriminatedUnion>(): UnionHelpersCore
   constructor: createConstructorFunction<Union>(),
 });
 
-const uncapitalize = (str: string): string => str.charAt(0).toLowerCase() + str.slice(1);
+const uncapitalize = (str: string): string =>
+  str.charAt(0).toLowerCase() + str.slice(1);
 
 /**
  * UnionHelpers core methods (without type guards)
@@ -277,7 +311,7 @@ export interface UnionHelpersCore<Union extends DiscriminatedUnion> {
    */
   filter<K extends ExtractDiscriminator<Union>>(
     values: readonly Union[],
-    types: K | readonly K[]
+    types: K | readonly K[],
   ): Array<ExtractVariant<Union, K>>;
 
   /**
@@ -297,7 +331,7 @@ export interface UnionHelpersCore<Union extends DiscriminatedUnion> {
     values: readonly Union[],
     predicates: {
       [P in K]: FilterPredicate<ExtractVariant<Union, P>>;
-    }
+    },
   ): Array<ExtractVariant<Union, K>>;
 
   /**
@@ -318,7 +352,7 @@ export interface UnionHelpersCore<Union extends DiscriminatedUnion> {
   fold<R>(
     value: Union,
     handlers: FoldHandlers<Union, R>,
-    defaultHandler: (value: Union) => R
+    defaultHandler: (value: Union) => R,
   ): R;
 
   /**
@@ -331,9 +365,7 @@ export interface UnionHelpersCore<Union extends DiscriminatedUnion> {
    * const partitioned = helpers.partition(values);
    * // { AType: [...], BType: [...] }
    */
-  partition(
-    values: readonly Union[]
-  ): {
+  partition(values: readonly Union[]): {
     [K in ExtractDiscriminator<Union>]: Array<ExtractVariant<Union, K>>;
   };
 
@@ -356,16 +388,15 @@ export interface UnionHelpersCore<Union extends DiscriminatedUnion> {
    * const a = createA({ data: 'hello' });
    */
   constructor<K extends ExtractDiscriminator<Union>>(
-    type: K
-  ): <T extends ExtractVariant<Union, K>>(
-    data: Omit<T, 'type'>
-  ) => T;
+    type: K,
+  ): <T extends ExtractVariant<Union, K>>(data: Omit<T, "type">) => T;
 }
 
 /**
  * UnionHelpers combines core methods with type guards
  */
-export type UnionHelpers<Union extends DiscriminatedUnion> = UnionHelpersCore<Union> & TypeGuards<Union>;
+export type UnionHelpers<Union extends DiscriminatedUnion> =
+  UnionHelpersCore<Union> & TypeGuards<Union>;
 
 /**
  * Create a set of type-safe helpers for working with a discriminated union.
@@ -380,7 +411,9 @@ export type UnionHelpers<Union extends DiscriminatedUnion> = UnionHelpersCore<Un
  *   // value is narrowed to AType
  * }
  */
-export function create<Union extends DiscriminatedUnion>(): UnionHelpers<Union> {
+export function create<
+  Union extends DiscriminatedUnion,
+>(): UnionHelpers<Union> {
   const core = createHelpersCore<Union>();
   const typeGuardCache = new Map<string, (value: Union) => boolean>();
 
@@ -394,7 +427,9 @@ export function create<Union extends DiscriminatedUnion>(): UnionHelpers<Union> 
 
         const typeName = prop.slice(2);
         const typeGuard = (value: Union): boolean => {
-          return value.type === uncapitalize(typeName) || value.type === typeName;
+          return (
+            value.type === uncapitalize(typeName) || value.type === typeName
+          );
         };
 
         typeGuardCache.set(prop, typeGuard);
@@ -402,7 +437,7 @@ export function create<Union extends DiscriminatedUnion>(): UnionHelpers<Union> 
       }
 
       return Reflect.get(target, prop, receiver);
-    }
+    },
   });
 }
 
