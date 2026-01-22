@@ -515,6 +515,12 @@ For best results, ensure your `tsconfig.json` includes:
 }
 ```
 
+## Claude Code Skill
+
+A Claude Code skill is included in the `skill/` directory. This provides AI-assisted help when working with unionix and discriminated unions.
+
+To use the skill, copy the `skill/` directory to your Claude Code skills folder (`~/.claude/skills/unionix`).
+
 ## License
 
 MIT
